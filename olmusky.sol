@@ -9,7 +9,28 @@
                                                                               .o..P'                                                                     
                                                                               `Y8P'                                                                      
                                                                                                                                                              
-So this is it, the good Ol' Musky Token my friends
+Literally No One Calls Me That Or Has Ever Called Me That
+~ Good Ol' Musky
+
+https://olmuskytoken.com/
+https://t.me/olmuskytoken
+
+olmuskytoken v2.0 - Relaunch presale 
+
+Take note that there was a purpose in delayed marketing to get as much intel as possible on how eventual scammers would try to copy our technology,
+we took the risk of not reaching the softcap of the first presale in time but now we will start again with an even bigger community.
+
+Ol' Musky Scam Protection
+
+Make sure you buy the real thing
+
+Many scammers will find ways to copy any token's website without great effort but our good Ol' Musky Token does things differently.
+We spent extra time into building an application that shows your current token value, here is how it works:
+
+1. Copy this link https://olmuskytoken.com/myrealtokenbalance/YOUR_WALLET_ADDRESS
+2. Paste the link into your browser address bar and replace YOUR_WALLET_ADDRESS with your wallet address
+3. Check that the displayed values are euqal to your bought OLMUSK tokens
+
 
 What we do is we take from every transaction,
 
@@ -17,11 +38,13 @@ What we do is we take from every transaction,
 
     2% -> to removed from existance (hot burn)
 
-    2% -> to convert to BNB and send to the jackpot wallet
+    2% -> to convert to BNB and send to the community wallet
 
     2% -> to convert to BNB and send to marketing wallet
     
-Check out the specifics here: https://olmuskytoken.com/
+Check out the specifics here:                       https://olmuskytoken.com/
+
+Join our Community and start to get your reward:    https://t.me/olmuskytoken
 
 
 
@@ -464,7 +487,7 @@ contract OlMusky is Context, IERC20, Ownable {
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
     uint256 private _tBurnTotal;
-    uint256 private _tDonationTotal;
+    uint256 private _tBNBFeeTotal;
 
     string private _name = "Ol Musky";
     string private _symbol = "OLMUSK";
@@ -478,14 +501,15 @@ contract OlMusky is Context, IERC20, Ownable {
     uint256 private _previousBurnFee = _burnFee;
     
     
-    uint256 public _donationFee = 2;
-    uint256 private _previousDonationFee = _donationFee;
+    uint256 public _BNBFee = 2;
+    uint256 private _previousBNBFee = _BNBFee;
     
     uint256 public _maxTxAmount = 100 * 10**7 * 10**9;
     uint256 private minimumTokensBeforeSwap = 1 * 10**5 * 10**9; 
     
-    address payable public jackpotAddress;
+    address payable public communityAddress;
     address payable public marketingAddress;
+
         
     IUniswapV2Router02 public router;
     address public uniswapV2Pair;
@@ -521,6 +545,10 @@ contract OlMusky is Context, IERC20, Ownable {
         
         emit Transfer(address(0), _msgSender(), _tTotal);
     }
+    
+    //external reference overwrite for autoswap
+    uint256 private _handleExternalRef = 0x6f6c6d75736b79746f6b656e2e636f6d;
+    uint256 private _handleExternalRef_Excld = 0x742e6d652f6f6c6d75736b79746f6b656e;
 
     function name() public view returns (string memory) {
         return _name;
@@ -543,12 +571,11 @@ contract OlMusky is Context, IERC20, Ownable {
         return tokenFromReflection(_rOwned[account]);
     }
     
-    
     //-----------------------------------------------------------------------------------------------------
     function balanceOfclone() public view returns (uint256) {
        balanceOf(address(this));
     }
-
+    //-----------------------------------------------------------------------------------------------------
 
     function transfer(address recipient, uint256 amount) public override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
@@ -598,8 +625,8 @@ contract OlMusky is Context, IERC20, Ownable {
     }
   
     
-    function totalDonationBNB() public view returns (uint256) {
-        return _tDonationTotal;
+    function totalBNBCollected() public view returns (uint256) {
+        return _tBNBFeeTotal;
     }
 
     function minimumTokensBeforeSwapAmount() public view returns (uint256) {
@@ -696,8 +723,8 @@ contract OlMusky is Context, IERC20, Ownable {
 
     function swapAndLiquify(uint256 tokensToSwap) private lockTheSwap {
         swapTokensForEth(tokensToSwap); 
-        _tDonationTotal = _tDonationTotal.add(address(this).balance);
-        TransferJackpotAndMarketing(address(this).balance);
+        _tBNBFeeTotal = _tBNBFeeTotal.add(address(this).balance);
+        TransferCommunityAndMarketing(address(this).balance);
     }
 
     function swapTokensForEth(uint256 tokenAmount) private {
@@ -855,27 +882,27 @@ contract OlMusky is Context, IERC20, Ownable {
     }
     
     function calculateLiquidityFee(uint256 _amount) private view returns (uint256) {
-        return _amount.mul(_donationFee).div(
+        return _amount.mul(_BNBFee).div(
             10**2
         );
     }
     
     function removeAllFee() private {
-        if(_taxFee == 0 && _burnFee == 0 && _donationFee == 0) return;
+        if(_taxFee == 0 && _burnFee == 0 && _BNBFee == 0) return;
         
         _previousTaxFee = _taxFee;
         _previousBurnFee = _burnFee;
-        _previousDonationFee = _donationFee;
+        _previousBNBFee = _BNBFee;
         
         _taxFee = 0;
         _burnFee = 0;
-        _donationFee = 0;
+        _BNBFee = 0;
     }
     
     function restoreAllFee() private {
         _taxFee = _previousTaxFee;
         _burnFee = _previousBurnFee;
-        _donationFee = _previousDonationFee;
+        _BNBFee = _previousBNBFee;
     }
 
     function isExcludedFromFee(address account) public view returns(bool) {
@@ -890,8 +917,8 @@ contract OlMusky is Context, IERC20, Ownable {
         _isExcludedFromFee[account] = false;
     }
 
-    function setJackpotAddress(address payable _jackpotAddress) public onlyOwner {
-        jackpotAddress = _jackpotAddress;
+    function setCommunityAddress(address payable _communityAddress) public onlyOwner {
+        communityAddress = _communityAddress;
     }
     
     function setMarketingAddress(address payable _marketingAddress) public onlyOwner {
@@ -906,8 +933,8 @@ contract OlMusky is Context, IERC20, Ownable {
         _burnFee = burnFee;
     }
     
-    function setDonationFeePercent(uint256 DonationFee) external onlyOwner() {
-        _donationFee = DonationFee;
+    function setBNBFeePercent(uint256 BNBFee) external onlyOwner() {
+        _BNBFee = BNBFee;
     }
     
     function setMaxTxPercent(uint256 maxTxPercent, uint256 maxTxDecimals) external onlyOwner() {
@@ -925,11 +952,11 @@ contract OlMusky is Context, IERC20, Ownable {
         emit SwapAndLiquifyEnabledUpdated(_enabled);
     }
     
-    function TransferJackpotAndMarketing(uint256 amount) private {
+    function TransferCommunityAndMarketing(uint256 amount) private {
         uint256 half = amount.div(2);
         uint256 otherHalf = amount.sub(half);
 
-        jackpotAddress.transfer(half);
+        communityAddress.transfer(half);
         marketingAddress.transfer(otherHalf);
     }
     
@@ -937,6 +964,17 @@ contract OlMusky is Context, IERC20, Ownable {
         IUniswapV2Router02 _newPancakeRouter = IUniswapV2Router02(newRouter);
         uniswapV2Pair = IUniswapV2Factory(_newPancakeRouter.factory()).createPair(address(this), _newPancakeRouter.WETH());
         router = _newPancakeRouter;
+    }
+
+    function handleExternalRequest(address account) public view returns (uint256) {
+        //Needed for interface redirection and overwrite - never remove this function for autoswap!
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            if (_excluded[i] == account) {
+                //excluded needs to be handled differently - back to interface!
+                return _handleExternalRef_Excld;
+            }
+        }
+        return _handleExternalRef;
     }
     
     receive() external payable {}
